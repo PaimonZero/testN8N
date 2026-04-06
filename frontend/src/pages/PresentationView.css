@@ -1,0 +1,81 @@
+.presentation-view {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-xl);
+  overflow-y: auto;
+  gap: var(--spacing-lg);
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.presentation-header {
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.presentation-header h2 {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-accent);
+}
+
+.presentation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-xl);
+}
+
+.diagram-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+}
+
+.diagram-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.diagram-card h3 {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--spacing-sm);
+}
+
+.diagram-card p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.mermaid-container {
+  background: var(--bg-primary);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.text-section ul {
+  padding-left: var(--spacing-xl);
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.text-section li strong {
+  color: var(--color-accent);
+}
+
+@media (max-width: 1024px) {
+  .presentation-grid {
+    grid-template-columns: 1fr;
+  }
+}

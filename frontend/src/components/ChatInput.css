@@ -118,17 +118,26 @@
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   color: var(--text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-family: var(--font-sans);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.suggestion-icon {
+  display: flex;
+  color: var(--accent-secondary);
 }
 
 .suggestion-chip:hover:not(:disabled) {
   background: var(--bg-card-hover);
   border-color: var(--accent-primary);
   color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 .suggestion-chip:disabled {

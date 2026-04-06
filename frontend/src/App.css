@@ -1,16 +1,89 @@
+@import './design-system.css';
+
+:root {
+  /* Legacy vars mapping to new system */
+  --accent-primary: var(--color-accent);
+  --accent-secondary: var(--color-secondary);
+  --bg-card: var(--color-bg-card);
+  --bg-card-hover: rgba(168, 162, 158, 0.1);
+  --border-subtle: var(--color-border-subtle);
+  --border-medium: var(--color-border-medium);
+  --text-primary: var(--color-text-main);
+  --text-secondary: var(--color-text-dim);
+  --text-tertiary: var(--color-text-muted);
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1;
+  background-color: var(--color-bg-base);
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  min-height: calc(100vh - 64px);
+  background-color: var(--gemini-bg);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: 24px 0 0 0; /* Gemini-like inner rounding */
+  background-color: #1e1f20; /* Slightly lighter than sidebar in dark */
+  margin-top: 8px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: calc(100vh - 80px); /* Fill available space but allow expanding */
+}
+
+[data-theme='light'] .app-main {
+  background-color: #ffffff;
+  border: 1px solid #dee1e6;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Removed hardcoded white .sidebar-open-btn to use Header.css theme logic */
+
+/* Rate limit badge */
+.badge-limit {
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* API keys badge */
+.badge-keys { cursor: pointer; }
+.badge-keys--full {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
 }
 
 /* Chat Area */
 .chat-area {
   flex: 1;
-  overflow-y: auto;
   padding: var(--spacing-lg);
+  /* Removed overflow-y: auto so the window scrolls instead of this container */
 }
 
 .chat-messages {
@@ -22,41 +95,78 @@
   padding-bottom: var(--spacing-2xl);
 }
 
-/* Welcome */
-.welcome {
+
+.gemini-welcome {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--spacing-2xl) var(--spacing-lg);
-  animation: fadeIn 0.5s ease-out;
+  margin-top: 10vh;
+  padding: 0 2rem;
 }
 
-.welcome-icon {
+.gemini-title-gradient {
+  font-family: 'Outfit', sans-serif;
   font-size: 3.5rem;
-  margin-bottom: var(--spacing-md);
-  animation: fadeSlideIn 0.5s ease-out 0.1s both;
-}
-
-.welcome-title {
-  font-size: 1.8rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  background: linear-gradient(135deg, var(--text-primary), var(--accent-secondary), var(--accent-primary));
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  background: linear-gradient(74deg, #4285f4 0, #9b72cb 9%, #d96570 20%, #d96570 24%, #9b72cb 35%, #4285f4 44%, #9b72cb 50%, #d96570 56%, #131314 75%, #131314 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: var(--spacing-sm);
-  animation: fadeSlideIn 0.5s ease-out 0.2s both;
+  margin-bottom: 0.5rem;
 }
 
-.welcome-desc {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  max-width: 500px;
-  line-height: 1.6;
-  animation: fadeSlideIn 0.5s ease-out 0.3s both;
+.gemini-subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 3.5rem;
+  font-weight: 500;
+  color: #444746;
+  margin-bottom: 3rem;
+  letter-spacing: -0.02em;
+}
+
+[data-theme='light'] .gemini-subtitle {
+  color: #c4c7c5;
+}
+
+.gemini-suggestions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 900px;
+}
+
+.suggestion-chip {
+  background: transparent;
+  border: 1px solid var(--gemini-hover);
+  color: var(--gemini-dim-text);
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.suggestion-chip:hover {
+  background: var(--gemini-hover);
+  color: var(--gemini-item-text);
+}
+
+.chip-icon {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .gemini-title-gradient, .gemini-subtitle {
+    font-size: 2.2rem;
+  }
 }
 
 .welcome-features {
@@ -167,16 +277,48 @@
   animation: fadeSlideIn 0.3s ease-out;
 }
 
+/* Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-medium);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
 @media (max-width: 640px) {
   .welcome-features {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .welcome-title {
-    font-size: 1.4rem;
-  }
 
   .live-cot-content {
     max-width: 92%;
+  }
+
+  /* Mobile Backdrop */
+  .sidebar-mobile-backdrop {
+    display: none;
+  }
+  .sidebar-mobile-backdrop.active {
+    display: block;
+    position: fixed;
+    inset: 0;
+    top: 64px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 990; /* Right below sidebar at 1000 */
+    animation: fadeIn 0.2s ease;
   }
 }

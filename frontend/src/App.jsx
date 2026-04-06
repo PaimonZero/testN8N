@@ -1,158 +1,158 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState, useContext, useCallback, useEffect } from 'react';
 import Header from './components/Header';
-import ChatInput from './components/ChatInput';
-import ChatMessage from './components/ChatMessage';
-import ChainOfThought from './components/ChainOfThought';
-import { subscribeToSession, cleanupSession } from './services/firebase';
-import { sendMessage } from './services/api';
+import ChatView from './pages/ChatView';
+import CompareView from './pages/CompareView';
+import PresentationView from './pages/PresentationView';
+import ConversationSidebar from './components/ConversationSidebar';
+import { SettingsContext } from './contexts/SettingsContext';
+import {
+  loadConversations, saveConversations, createConversation,
+  updateConversation, togglePin
+} from './services/conversationStorage';
 import './App.css';
 
 export default function App() {
-  const [messages, setMessages] = useState([]);
-  const [currentSteps, setCurrentSteps] = useState([]);
+  const [version, setVersion] = useState('v3');
+  const [llmModel, setLlmModel] = useState('claude');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
-  const messagesEndRef = useRef(null);
-  const currentStepsRef = useRef([]);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
+  const location = useLocation();
 
-  // Keep ref in sync with state for use in async callbacks
-  useEffect(() => {
-    currentStepsRef.current = currentSteps;
-  }, [currentSteps]);
-
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, currentSteps]);
-
-  const handleSend = useCallback(async (text) => {
-    // Generate unique session ID
-    const sessionId = crypto.randomUUID();
-
-    // Add user message
-    setMessages(prev => [...prev, { role: 'user', content: text }]);
-    setCurrentSteps([]);
-    setIsProcessing(true);
-    setError(null);
-
-    // 1. Subscribe to Firebase BEFORE calling N8N
-    const unsubscribe = subscribeToSession(sessionId, (step) => {
-      setCurrentSteps(prev => {
-        const newSteps = [...prev, step];
-        currentStepsRef.current = newSteps;
-        return newSteps;
-      });
-    });
-
-    try {
-      // 2. Call N8N webhook (blocks until final answer)
-      const result = await sendMessage(text, sessionId);
-
-      // 3. Add AI response with embedded steps
-      setMessages(prev => [...prev, {
-        role: 'ai',
-        content: result.finalAnswer || 'Không nhận được phản hồi từ agent.',
-        steps: currentStepsRef.current,
-      }]);
-    } catch (err) {
-      console.error('Error:', err);
-      setError(err.message || 'Đã xảy ra lỗi khi gọi agent.');
-
-      // Still save whatever steps we got
-      if (currentStepsRef.current.length > 0) {
-        setMessages(prev => [...prev, {
-          role: 'ai',
-          content: `⚠️ Đã xảy ra lỗi: ${err.message}. Dưới đây là các bước agent đã thực hiện trước khi lỗi.`,
-          steps: currentStepsRef.current,
-        }]);
-      }
-    } finally {
-      // 4. Cleanup
-      unsubscribe();
-      setIsProcessing(false);
-      setCurrentSteps([]);
-
-      // Clean up Firebase data after a delay
-      setTimeout(() => cleanupSession(sessionId), 5000);
+  // Conversation management
+  const [conversations, setConversations] = useState(() => {
+    const loaded = loadConversations();
+    if (loaded.length === 0) {
+      const first = createConversation();
+      saveConversations([first]);
+      return [first];
     }
+    return loaded;
+  });
+  const [activeConvId, setActiveConvId] = useState(() => conversations[0]?.id);
+  const activeConversation = conversations.find(c => c.id === activeConvId);
+
+  const handleNewConversation = useCallback((conv) => {
+    // Intelligent Check: If a "New Chat" (empty) already exists, don't create another one
+    const emptyConv = conversations.find(c => c.messages.length === 0);
+    if (emptyConv) {
+      setActiveConvId(emptyConv.id);
+      return;
+    }
+
+    const newConv = conv || createConversation();
+    setConversations(prev => {
+      const filtered = prev.filter(c => c.id !== newConv.id);
+      const updated = [newConv, ...filtered];
+      saveConversations(updated);
+      return updated;
+    });
+    setActiveConvId(newConv.id);
+  }, [conversations]);
+
+  const handleSelectConversation = useCallback((conv) => {
+    setActiveConvId(conv.id);
+    // Close sidebar on mobile after selecting
+    if (window.innerWidth < 768) setSidebarOpen(false);
   }, []);
+
+  const handleDeleteConversation = useCallback((id) => {
+    setConversations(prev => {
+      const updated = prev.filter(c => c.id !== id);
+      saveConversations(updated);
+      // If active conversation was deleted, switch to the first available or create new
+      if (id === activeConvId) {
+        if (updated.length > 0) {
+          setActiveConvId(updated[0].id);
+        } else {
+          const first = createConversation();
+          const newConvs = [first];
+          saveConversations(newConvs);
+          setConversations(newConvs);
+          setActiveConvId(first.id);
+        }
+      }
+      return updated;
+    });
+  }, [activeConvId]);
+
+  const handleTogglePin = useCallback((id) => {
+    setConversations(prev => {
+      const updated = togglePin(prev, id);
+      saveConversations(updated);
+      return updated;
+    });
+  }, []);
+
+  const handleMessagesUpdate = useCallback((messages) => {
+    setConversations(prev => {
+      const updated = updateConversation(prev, activeConvId, messages);
+      saveConversations(updated);
+      return updated;
+    });
+  }, [activeConvId]);
+
+  const showSidebar = location.pathname === '/chat' || location.pathname === '/';
 
   return (
     <div className="app">
-      <Header isProcessing={isProcessing} />
+      <Header
+        isProcessing={isProcessing}
+        version={version} setVersion={setVersion}
+        llmModel={llmModel} setLlmModel={setLlmModel}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(p => !p)}
+        showSidebarToggle={showSidebar}
+      />
 
-      <main className="chat-area">
-        <div className="chat-messages">
-          {/* Welcome message */}
-          {messages.length === 0 && (
-            <div className="welcome">
-              <div className="welcome-icon">🌤️</div>
-              <h2 className="welcome-title">Weather Event Planner Agent</h2>
-              <p className="welcome-desc">
-                Tôi là AI Agent chuyên lên kế hoạch sự kiện dựa trên thời tiết.
-                Hãy cho tôi biết bạn muốn tổ chức sự kiện gì, ở đâu và khi nào!
-              </p>
-              <div className="welcome-features">
-                <div className="feature-card">
-                  <span className="feature-icon">🧠</span>
-                  <span className="feature-label">ReAct Reasoning</span>
-                  <span className="feature-desc">Suy luận từng bước</span>
-                </div>
-                <div className="feature-card">
-                  <span className="feature-icon">🌤️</span>
-                  <span className="feature-label">Weather API</span>
-                  <span className="feature-desc">Dữ liệu thời tiết thực</span>
-                </div>
-                <div className="feature-card">
-                  <span className="feature-icon">🔍</span>
-                  <span className="feature-label">Web Search</span>
-                  <span className="feature-desc">Tìm kiếm địa điểm</span>
-                </div>
-                <div className="feature-card">
-                  <span className="feature-icon">⚡</span>
-                  <span className="feature-label">Streaming CoT</span>
-                  <span className="feature-desc">Xem AI suy nghĩ realtime</span>
-                </div>
-              </div>
-            </div>
-          )}
+      <div className={`app-body ${showSidebar ? 'app-body--with-sidebar' : ''}`}>
+        {showSidebar && (
+          <>
+            <div 
+              className={`sidebar-mobile-backdrop ${sidebarOpen ? 'active' : ''}`}
+              onClick={() => setSidebarOpen(false)}
+            />
+            <ConversationSidebar
+              conversations={conversations}
+              activeId={activeConvId}
+              onSelect={handleSelectConversation}
+              onNew={handleNewConversation}
+              onDelete={handleDeleteConversation}
+              onTogglePin={handleTogglePin}
+              isOpen={sidebarOpen}
+              onToggle={() => setSidebarOpen(p => !p)}
+            />
+          </>
+        )}
 
-          {/* Chat messages */}
-          {messages.map((msg, i) => (
-            <ChatMessage key={i} message={msg} />
-          ))}
-
-          {/* Live Chain of Thought (while processing) */}
-          {isProcessing && (
-            <div className="live-cot-wrapper">
-              <div className="message-avatar">
-                <span>🤖</span>
-              </div>
-              <div className="live-cot-content">
-                <ChainOfThought steps={currentSteps} isProcessing={true} />
-
-                {currentSteps.length === 0 && (
-                  <div className="cot-initializing">
-                    <span className="init-spinner" />
-                    <span>Đang khởi tạo agent...</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Error display */}
-          {error && !isProcessing && (
-            <div className="error-banner">
-              <span>⚠️</span> {error}
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
+        <div className="app-main">
+          <Routes>
+            <Route
+              path="/chat"
+              element={
+                <ChatView
+                  key={activeConvId}
+                  version={version}
+                  llmModel={llmModel}
+                  isProcessing={isProcessing}
+                  setIsProcessing={setIsProcessing}
+                  initialMessages={activeConversation?.messages || []}
+                  onMessagesUpdate={handleMessagesUpdate}
+                />
+              }
+            />
+            <Route
+              path="/compare"
+              element={<CompareView llmModel={llmModel} isProcessing={isProcessing} setIsProcessing={setIsProcessing} />}
+            />
+            <Route
+              path="/presentation"
+              element={<PresentationView llmModel={llmModel} />}
+            />
+            <Route path="*" element={<Navigate to="/chat" />} />
+          </Routes>
         </div>
-      </main>
-
-      <ChatInput onSend={handleSend} disabled={isProcessing} />
+      </div>
     </div>
   );
 }

@@ -63,55 +63,131 @@
   font-size: 0.92rem;
 }
 
-/* Markdown styling */
+/* ── Markdown Rendering ── */
 .message-markdown {
   font-size: 0.9rem;
   color: var(--text-primary);
+  line-height: 1.7;
 }
+
+.message-markdown > *:first-child { margin-top: 0; }
+.message-markdown > *:last-child  { margin-bottom: 0; }
 
 .message-markdown h1,
 .message-markdown h2,
-.message-markdown h3 {
-  margin-top: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
+.message-markdown h3,
+.message-markdown h4 {
+  margin-top: 1.1em;
+  margin-bottom: 0.4em;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.message-markdown h1 { font-size: 1.2rem; }
+.message-markdown h2 { font-size: 1.08rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.3em; }
+.message-markdown h3 { font-size: 0.97rem; }
+.message-markdown h4 { font-size: 0.9rem; }
+
+.message-markdown p { margin-bottom: 0.65em; }
+
+.message-markdown ul,
+.message-markdown ol {
+  margin-left: 1.4rem;
+  margin-bottom: 0.65em;
+}
+
+.message-markdown li { margin-bottom: 0.3em; }
+
+/* Task list checkboxes */
+.message-markdown input[type="checkbox"] {
+  margin-right: 0.4em;
+  accent-color: var(--color-accent);
+}
+
+.message-markdown strong { font-weight: 700; color: var(--text-primary); }
+.message-markdown em     { color: var(--text-secondary); font-style: italic; }
+.message-markdown del    { opacity: 0.6; text-decoration: line-through; }
+
+/* Inline code */
+.md-inline-code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.83em;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--color-accent);
+}
+[data-theme='light'] .md-inline-code {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0,0,0,0.1);
+  color: #b45309;
+}
+
+/* Code blocks from syntax highlighter */
+.md-code-block {
+  border-radius: 0.6rem !important;
+  margin: 0.75em 0 !important;
+  font-size: 0.8rem !important;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* External links */
+.md-link {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.2s;
+}
+.md-link:hover { opacity: 0.75; }
+
+/* Blockquote */
+.message-markdown blockquote {
+  border-left: 3px solid var(--color-accent);
+  margin: 0.75em 0;
+  padding: 0.4em 0.85em;
+  background: rgba(255,255,255,0.03);
+  border-radius: 0 0.4rem 0.4rem 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Tables */
+.md-table-wrapper {
+  overflow-x: auto;
+  margin: 0.75em 0;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.md-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.md-table th,
+.md-table td {
+  padding: 0.5em 0.85em;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.md-table th {
+  background: rgba(255, 255, 255, 0.05);
   font-weight: 700;
   color: var(--text-primary);
 }
 
-.message-markdown h1 { font-size: 1.15rem; }
-.message-markdown h2 { font-size: 1.05rem; }
-.message-markdown h3 { font-size: 0.95rem; }
+.md-table tr:last-child td { border-bottom: none; }
+.md-table tbody tr:hover   { background: rgba(255,255,255,0.03); }
 
-.message-markdown p {
-  margin-bottom: var(--spacing-sm);
-}
+[data-theme='light'] .md-table th              { background: rgba(0,0,0,0.04); }
+[data-theme='light'] .md-table tbody tr:hover  { background: rgba(0,0,0,0.02); }
 
-.message-markdown ul, .message-markdown ol {
-  margin-left: var(--spacing-lg);
-  margin-bottom: var(--spacing-sm);
-}
-
-.message-markdown li {
-  margin-bottom: 4px;
-}
-
-.message-markdown strong {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.message-markdown em {
-  color: var(--text-secondary);
-}
-
-.message-markdown code {
-  background: rgba(255, 255, 255, 0.06);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 0.85em;
-}
-
+/* Horizontal rule */
 .message-markdown hr {
   border: none;
   border-top: 1px solid var(--border-subtle);
@@ -119,7 +195,6 @@
 }
 
 @media (max-width: 640px) {
-  .message-content-wrapper {
-    max-width: 92%;
-  }
+  .message-content-wrapper { max-width: 92%; }
+  .md-code-block { font-size: 0.75rem !important; }
 }

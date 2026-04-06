@@ -138,8 +138,8 @@
   font-size: 0.84rem;
   color: var(--text-secondary);
   line-height: 1.6;
-  white-space: pre-wrap;
   word-break: break-word;
+  margin: 0;
 }
 
 /* Weather inline card */
@@ -203,3 +203,62 @@
 .thought-step.latest .step-content {
   position: relative;
 }
+
+/* ── Markdown inside steps ── */
+.step-body p { margin-bottom: 0.4em; }
+.step-body p:last-child { margin-bottom: 0; }
+
+.step-body ul,
+.step-body ol {
+  margin-left: 1.2rem;
+  margin-bottom: 0.4em;
+}
+.step-body li { margin-bottom: 0.2em; }
+
+.step-body strong,
+.step-strong {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.step-inline-code {
+  background: rgba(255, 255, 255, 0.07);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8em;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--color-accent);
+}
+
+[data-theme='light'] .step-inline-code {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #b45309;
+}
+
+.step-code-block {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.4rem;
+  padding: 0.5em 0.75em;
+  margin: 0.4em 0;
+  overflow-x: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='light'] .step-code-block {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.step-link {
+  color: var(--color-accent);
+  text-underline-offset: 2px;
+  text-decoration: underline;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.step-link:hover { opacity: 1; }

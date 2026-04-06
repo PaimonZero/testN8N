@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './ThoughtStep.css';
 
 const STEP_CONFIG = {
@@ -22,6 +24,36 @@ const STEP_CONFIG = {
     className: 'step-final',
   },
 };
+
+/** Lightweight markdown renderer for CoT steps — no syntax highlighting to keep it fast */
+function StepMarkdown({ children }) {
+  if (!children) return null;
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        // Render paragraphs as spans to stay inline with step-text styling
+        p: ({ node, children }) => <p className="step-text">{children}</p>,
+        // Inline code
+        code: ({ node, inline, children }) =>
+          inline ? (
+            <code className="step-inline-code">{children}</code>
+          ) : (
+            <pre className="step-code-block"><code>{children}</code></pre>
+          ),
+        // Links open externally
+        a: ({ node, href, children }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="step-link">
+            {children}
+          </a>
+        ),
+        strong: ({ node, children }) => <strong className="step-strong">{children}</strong>,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+}
 
 export default function ThoughtStep({ step, index, isLatest }) {
   const config = STEP_CONFIG[step.type] || STEP_CONFIG.thought;
@@ -55,7 +87,7 @@ export default function ThoughtStep({ step, index, isLatest }) {
 
         {step.content && (
           <div className="step-body">
-            <p className="step-text">{step.content}</p>
+            <StepMarkdown>{step.content}</StepMarkdown>
           </div>
         )}
 

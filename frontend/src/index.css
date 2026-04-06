@@ -68,6 +68,26 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
+/* ===== Light Theme Overrides ===== */
+[data-theme='light'] {
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #F1F5F9;
+  --bg-tertiary: #E2E8F0;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card-hover: rgba(255, 255, 255, 1);
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --border-subtle: rgba(15, 23, 42, 0.1);
+  --border-medium: rgba(15, 23, 42, 0.2);
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-inverse: #f8fafc;
+
+  --user-bg: linear-gradient(135deg, #1E40AF, #3B82F6);
+  --ai-bg: #FFFFFF;
+}
+
 /* ===== Reset & Base ===== */
 *, *::before, *::after {
   margin: 0;
@@ -85,7 +105,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
-  overflow-x: hidden;
+  
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

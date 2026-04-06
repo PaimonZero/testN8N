@@ -25,54 +25,60 @@ const WEATHER_CODES = {
   99: 'Giông bão kèm mưa đá to',
 };
 
+const logger = require('./logger');
+
 /**
  * Fetch weather forecast from Open-Meteo API.
- *
- * @param {number} latitude
- * @param {number} longitude
- * @param {string} targetDate - YYYY-MM-DD format
- * @returns {object} Processed weather data
  */
 async function getWeather(latitude, longitude, targetDate) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Ho_Chi_Minh&forecast_days=14`;
 
-  const response = await fetch(url);
+  try {
+    logger.info('WEATHER', `Fetching forecast for: [Lat: ${latitude}, Lon: ${longitude}] on date: ${targetDate}...`);
+    const response = await fetch(url);
 
-  if (!response.ok) {
-    throw new Error(`Open-Meteo API error: ${response.status}`);
+    if (!response.ok) {
+      logger.error('WEATHER', `API Error: ${response.status}`);
+      throw new Error(`Open-Meteo API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const daily = data.daily;
+    
+    // Find target date index
+    let targetIndex = daily.time.indexOf(targetDate);
+    if (targetIndex === -1) {
+      logger.warn('WEATHER', `Target date ${targetDate} not found, falling back to 7-day forecast.`);
+      targetIndex = Math.min(6, daily.time.length - 1);
+    }
+
+    const code = daily.weather_code[targetIndex];
+    const maxTemp = daily.temperature_2m_max[targetIndex];
+    const minTemp = daily.temperature_2m_min[targetIndex];
+    const rainProb = daily.precipitation_probability_max[targetIndex];
+
+    const isSunny = code <= 3 && rainProb < 50;
+    const condition = isSunny ? 'sunny' : 'rainy';
+    const description = WEATHER_CODES[code] || `Mã thời tiết ${code}`;
+
+    const result = {
+      condition,
+      isSunny,
+      weatherCode: code,
+      description,
+      maxTemp,
+      minTemp,
+      rainProbability: rainProb,
+      targetDate: daily.time[targetIndex],
+      summary: `${description}, nhiệt độ ${minTemp}°C - ${maxTemp}°C, xác suất mưa: ${rainProb}%`,
+    };
+
+    logger.success('WEATHER', `Result: ${result.summary}`);
+    return result;
+  } catch (error) {
+    logger.error('WEATHER', `Unexpected error: ${error.message}`, error);
+    throw error;
   }
-
-  const data = await response.json();
-  const daily = data.daily;
-
-  // Find target date index
-  let targetIndex = daily.time.indexOf(targetDate);
-  if (targetIndex === -1) {
-    // Fallback: use day 6 (roughly next Saturday)
-    targetIndex = Math.min(6, daily.time.length - 1);
-  }
-
-  const code = daily.weather_code[targetIndex];
-  const maxTemp = daily.temperature_2m_max[targetIndex];
-  const minTemp = daily.temperature_2m_min[targetIndex];
-  const rainProb = daily.precipitation_probability_max[targetIndex];
-
-  // Sunny if weather code <= 3 AND rain probability < 50%
-  const isSunny = code <= 3 && rainProb < 50;
-  const condition = isSunny ? 'sunny' : 'rainy';
-  const description = WEATHER_CODES[code] || `Mã thời tiết ${code}`;
-
-  return {
-    condition,
-    isSunny,
-    weatherCode: code,
-    description,
-    maxTemp,
-    minTemp,
-    rainProbability: rainProb,
-    targetDate: daily.time[targetIndex],
-    summary: `${description}, nhiệt độ ${minTemp}°C - ${maxTemp}°C, xác suất mưa: ${rainProb}%`,
-  };
 }
 
 module.exports = { getWeather, WEATHER_CODES };

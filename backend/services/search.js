@@ -11,6 +11,8 @@
  * Fallback: Agent dùng kiến thức có sẵn
  */
 
+const logger = require('./logger');
+
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_SEARCH_API_KEY;
 const GOOGLE_CX = process.env.GOOGLE_SEARCH_CX;
@@ -18,28 +20,30 @@ const GOOGLE_CX = process.env.GOOGLE_SEARCH_CX;
 /**
  * Search the web — tự động chọn provider khả dụng.
  */
-async function searchWeb(query) {
+async function searchWeb(query, userKeys = {}) {
+  logger.info('SEARCH', `Starting search for: "${query}"...`);
+  
+  const serperKey = userKeys.serperApiKey || SERPER_API_KEY;
+
   // Priority 1: Serper.dev (dễ setup nhất)
-  if (SERPER_API_KEY && SERPER_API_KEY !== 'your-serper-api-key-here') {
-    console.log('🔍 Using Serper.dev for search...');
-    return await searchSerper(query);
+  if (serperKey && serperKey !== 'your-serper-api-key-here') {
+    logger.info('SEARCH', 'Using Serper.dev for provider...');
+    return await searchSerper(query, serperKey);
   }
 
   // Priority 2: Google Custom Search
   if (GOOGLE_API_KEY && GOOGLE_CX &&
       GOOGLE_API_KEY !== 'your-google-api-key-here') {
-    console.log('🔍 Using Google Custom Search...');
+    logger.info('SEARCH', 'Using Google Custom Search for provider...');
     return await searchGoogle(query);
   }
 
-  console.warn('⚠️  No search API configured. Add SERPER_API_KEY to .env');
-  console.warn('   Get free key: https://serper.dev');
+  logger.warn('SEARCH', 'No search API configured. Falling back to internal knowledge.');
   return formatFallback(query);
 }
 
 /**
  * Serper.dev — Google Search Results API.
- * FREE: 2500 queries (no credit card needed)
  */
 async function searchSerper(query) {
   try {
@@ -59,7 +63,7 @@ async function searchSerper(query) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.warn(`Serper error ${response.status}:`, errorText);
+      logger.error('SEARCH', `Serper API Error ${response.status}`, errorText);
       return formatFallback(query);
     }
 
@@ -67,33 +71,28 @@ async function searchSerper(query) {
     const organic = data.organic || [];
 
     if (organic.length === 0) {
+      logger.warn('SEARCH', `Serper returned 0 results for: "${query}"`);
       return formatFallback(query);
     }
 
     let formatted = `Kết quả tìm kiếm cho "${query}":\n\n`;
-
     organic.slice(0, 5).forEach((item, i) => {
       formatted += `${i + 1}. **${item.title}**\n`;
-      if (item.snippet) {
-        formatted += `   ${item.snippet}\n`;
-      }
-      if (item.link) {
-        formatted += `   🔗 ${item.link}\n`;
-      }
+      if (item.snippet) formatted += `   ${item.snippet}\n`;
+      if (item.link) formatted += `   🔗 ${item.link}\n`;
       formatted += '\n';
     });
 
-    console.log(`✅ Serper: ${organic.length} results found`);
+    logger.success('SEARCH', `Serper found ${organic.length} results.`);
     return formatted;
   } catch (error) {
-    console.warn('Serper error:', error.message);
+    logger.error('SEARCH', `Serper unexpected error: ${error.message}`, error);
     return formatFallback(query);
   }
 }
 
 /**
  * Google Custom Search JSON API.
- * FREE: 100 queries/day
  */
 async function searchGoogle(query) {
   try {
@@ -102,18 +101,18 @@ async function searchGoogle(query) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.warn(`Google Search error ${response.status}:`, errorData?.error?.message);
+      logger.error('SEARCH', `Google API Error ${response.status}`, errorData?.error?.message);
       return formatFallback(query);
     }
 
     const data = await response.json();
 
     if (!data.items || data.items.length === 0) {
+      logger.warn('SEARCH', `Google Search returned 0 results for: "${query}"`);
       return formatFallback(query);
     }
 
     let formatted = `Kết quả tìm kiếm cho "${query}":\n\n`;
-
     data.items.slice(0, 5).forEach((item, i) => {
       formatted += `${i + 1}. **${item.title}**\n`;
       if (item.snippet) formatted += `   ${item.snippet}\n`;
@@ -121,10 +120,10 @@ async function searchGoogle(query) {
       formatted += '\n';
     });
 
-    console.log(`✅ Google Search: ${data.items.length} results found`);
+    logger.success('SEARCH', `Google Search found ${data.items.length} results.`);
     return formatted;
   } catch (error) {
-    console.warn('Google Search error:', error.message);
+    logger.error('SEARCH', `Google Search unexpected error: ${error.message}`, error);
     return formatFallback(query);
   }
 }

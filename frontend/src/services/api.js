@@ -1,12 +1,12 @@
-const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
-
 /**
- * Send a message to the N8N webhook and wait for the final answer.
- * The chain of thought is streamed separately via Firebase.
+ * getRateLimitStatus — Fetch the current IP's daily usage quota.
  */
-export async function sendMessage(message, sessionId) {
+const BE_API_URL = import.meta.env.VITE_BE_API_URL || 'http://localhost:3000/api/chat';
+const BE_BASE_URL = BE_API_URL.replace('/api/chat', '');
+
+export async function sendMessage(message, sessionId, version = 'v3', llmModel = 'claude', history = [], userKeys = {}, adminCode = '') {
   try {
-    const response = await fetch(N8N_WEBHOOK_URL, {
+    const response = await fetch(`${BE_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -14,17 +14,47 @@ export async function sendMessage(message, sessionId) {
       body: JSON.stringify({
         message,
         sessionId,
+        version,
+        llmModel,
+        history,
+        userKeys,
+        adminCode,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`N8N webhook error: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        const fetchError = new Error(errorData.message || 'Đã đạt giới hạn request trong ngày.');
+        if (errorData.rateLimitStatus) {
+            fetchError.rateLimitStatus = errorData.rateLimitStatus;
+        }
+        throw fetchError;
+      }
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
-    console.error('Error calling N8N webhook:', error);
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra backend có đang chạy không.');
+    }
     throw error;
+  }
+}
+
+export async function getRateLimitStatus(userKeys = {}, llmModel = 'gemini', adminCode = '') {
+  try {
+    const response = await fetch(`${BE_BASE_URL}/api/rate-limit-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userKeys, llmModel, adminCode })
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
   }
 }

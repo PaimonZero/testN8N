@@ -1,0 +1,40 @@
+/* Design System Tokens — Luxury / Premium Brand */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Core Colors */
+  --color-primary: #1C1917;    /* Stone 900 */
+  --color-secondary: #44403C;  /* Stone 700 */
+  --color-accent: #CA8A04;     /* Gold / Ochre */
+  --color-accent-hover: #A16207;
+  --color-bg-base: #0C0A09;    /* Stone 950 */
+  --color-bg-card: rgba(28, 25, 23, 0.7);
+  --color-border-subtle: rgba(168, 162, 158, 0.15);
+  --color-border-medium: rgba(168, 162, 158, 0.3);
+  
+  /* Text */
+  --color-text-main: #FAFAF9;
+  --color-text-dim: #A8A29E;
+  --color-text-muted: #78716C;
+  
+  /* Glass Effects */
+  --glass-blur: blur(20px);
+  --glass-bg: rgba(12, 10, 9, 0.65);
+  --glass-border: 1px solid rgba(202, 138, 4, 0.15);
+  --glass-reflection: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0) 100%);
+  
+  /* Animations */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+[data-theme='light'] {
+  --color-bg-base: #FAFAF9;
+  --color-bg-card: rgba(255, 255, 255, 0.8);
+  --color-text-main: #0C0A09;
+  --color-text-dim: #44403C;
+  --color-text-muted: #78716C;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: 1px solid rgba(202, 138, 4, 0.3);
+}
