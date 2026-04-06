@@ -1,0 +1,458 @@
+{
+  "name": "ReAct Agent - Weather Event Planner (Streaming CoT)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "react-agent",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "react-agent-webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $json.body.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 1,\n  \"type\": \"thought\",\n  \"icon\": \"🧠\",\n  \"title\": \"Phân tích yêu cầu\",\n  \"content\": \"Đang phân tích yêu cầu của bạn: {{ $json.body.message }}\",\n  \"tool\": null,\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-1",
+      "name": "Push Log 1 - Analyzing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// LLM Parse Request - Using Code node to call Anthropic via HTTP\nconst userMessage = $('Webhook').first().json.body.message;\n\n// Call Anthropic API directly\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.anthropic.com/v1/messages',\n  headers: {\n    'Content-Type': 'application/json',\n    'x-api-key': '{{ $credentials.anthropicApi.apiKey }}',\n    'anthropic-version': '2023-06-01'\n  },\n  body: {\n    model: 'claude-sonnet-4-20250514',\n    max_tokens: 1024,\n    messages: [\n      {\n        role: 'user',\n        content: `Bạn là bộ phân tích yêu cầu. Trích xuất thông tin sau từ tin nhắn người dùng và trả về JSON (CHỈ JSON, không thêm gì khác):\n{\n  \"city\": \"tên thành phố\",\n  \"latitude\": số,\n  \"longitude\": số,\n  \"date\": \"ngày cụ thể (YYYY-MM-DD)\",\n  \"dateDescription\": \"mô tả ngày\",\n  \"request\": \"yêu cầu chính\",\n  \"sunnyAction\": \"hành động nếu trời nắng\",\n  \"rainyAction\": \"hành động nếu trời mưa\"\n}\n\nTọa độ các thành phố Việt Nam:\n- Vũng Tàu: lat=10.346, lon=107.084\n- Hồ Chí Minh: lat=10.823, lon=106.630\n- Hà Nội: lat=21.028, lon=105.854\n- Đà Nẵng: lat=16.054, lon=108.202\n- Nha Trang: lat=12.238, lon=109.196\n- Đà Lạt: lat=11.941, lon=108.458\n- Phú Quốc: lat=10.227, lon=103.967\n- Huế: lat=16.463, lon=107.590\n\nNgày hôm nay là: ${new Date().toISOString().split('T')[0]}\nNếu người dùng nói \"thứ 7 tới\", hãy tính ngày cụ thể.\n\nTin nhắn: \"${userMessage}\"`\n      }\n    ]\n  },\n  json: true\n});\n\nconst text = response.content[0].text;\n// Parse JSON từ response (có thể có markdown wrapper)\nconst jsonMatch = text.match(/\\{[\\s\\S]*\\}/);\nconst parsed = JSON.parse(jsonMatch[0]);\n\nreturn [{ json: { ...parsed, originalMessage: userMessage, sessionId: $('Webhook').first().json.body.sessionId } }];"
+      },
+      "id": "llm-parse-request",
+      "name": "LLM Parse Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $json.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 2,\n  \"type\": \"thought\",\n  \"icon\": \"🧠\",\n  \"title\": \"Đã xác định thông tin\",\n  \"content\": \"Thành phố: {{ $json.city }}\\nNgày: {{ $json.dateDescription }} ({{ $json.date }})\\nYêu cầu: {{ $json.request }}\",\n  \"tool\": null,\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-2",
+      "name": "Push Log 2 - Parsed Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $('LLM Parse Request').first().json.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 3,\n  \"type\": \"action\",\n  \"icon\": \"⚡\",\n  \"title\": \"Gọi Weather API\",\n  \"content\": \"Đang kiểm tra thời tiết tại {{ $('LLM Parse Request').first().json.city }} (lat: {{ $('LLM Parse Request').first().json.latitude }}, lon: {{ $('LLM Parse Request').first().json.longitude }})...\",\n  \"tool\": \"Open-Meteo Weather API\",\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-3",
+      "name": "Push Log 3 - Weather Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $('LLM Parse Request').first().json.latitude }}&longitude={{ $('LLM Parse Request').first().json.longitude }}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Ho_Chi_Minh&forecast_days=14",
+        "options": {}
+      },
+      "id": "weather-api",
+      "name": "Weather API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Weather Data\nconst weather = $input.first().json;\nconst daily = weather.daily;\nconst parsedInfo = $('LLM Parse Request').first().json;\nconst targetDate = parsedInfo.date;\n\n// WMO Weather Codes\nconst weatherCodes = {\n  0: 'Trời quang đãng (Nắng)',\n  1: 'Chủ yếu quang đãng', 2: 'Mây rải rác', 3: 'Nhiều mây',\n  45: 'Sương mù', 48: 'Sương mù đóng băng',\n  51: 'Mưa phùn nhẹ', 53: 'Mưa phùn vừa', 55: 'Mưa phùn dày',\n  61: 'Mưa nhẹ', 63: 'Mưa vừa', 65: 'Mưa to',\n  80: 'Mưa rào nhẹ', 81: 'Mưa rào vừa', 82: 'Mưa rào to',\n  95: 'Giông bão', 96: 'Giông bão kèm mưa đá nhẹ', 99: 'Giông bão kèm mưa đá to'\n};\n\n// Tìm index ngày target\nlet targetIndex = daily.time.indexOf(targetDate);\nif (targetIndex === -1) {\n  // Fallback: dùng ngày gần nhất\n  targetIndex = Math.min(6, daily.time.length - 1);\n}\n\nconst code = daily.weather_code[targetIndex];\nconst maxTemp = daily.temperature_2m_max[targetIndex];\nconst minTemp = daily.temperature_2m_min[targetIndex];\nconst rainProb = daily.precipitation_probability_max[targetIndex];\n\n// Nắng nếu weather code <= 3 VÀ xác suất mưa < 50%\nconst isSunny = code <= 3 && rainProb < 50;\nconst condition = isSunny ? 'sunny' : 'rainy';\nconst description = weatherCodes[code] || `Mã thời tiết ${code}`;\n\nreturn [{\n  json: {\n    condition,\n    isSunny,\n    weatherCode: code,\n    description,\n    maxTemp,\n    minTemp,\n    rainProbability: rainProb,\n    targetDate: daily.time[targetIndex],\n    summary: `${description}, nhiệt độ ${minTemp}°C - ${maxTemp}°C, xác suất mưa: ${rainProb}%`,\n    sessionId: parsedInfo.sessionId,\n    city: parsedInfo.city,\n    dateDescription: parsedInfo.dateDescription\n  }\n}];"
+      },
+      "id": "process-weather",
+      "name": "Process Weather",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $json.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 4,\n  \"type\": \"observation\",\n  \"icon\": \"👁️\",\n  \"title\": \"Kết quả thời tiết\",\n  \"content\": \"{{ $json.summary }}\",\n  \"tool\": \"Open-Meteo Weather API\",\n  \"weather\": {\n    \"condition\": \"{{ $json.condition }}\",\n    \"description\": \"{{ $json.description }}\",\n    \"maxTemp\": {{ $json.maxTemp }},\n    \"minTemp\": {{ $json.minTemp }},\n    \"rainProbability\": {{ $json.rainProbability }},\n    \"weatherCode\": {{ $json.weatherCode }}\n  },\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-4",
+      "name": "Push Log 4 - Weather Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reasoning step - Decide what to search based on weather\nconst weather = $('Process Weather').first().json;\nconst parsedInfo = $('LLM Parse Request').first().json;\n\nlet reasoning, searchQuery, category;\n\nif (weather.isSunny) {\n  reasoning = `Thời tiết tại ${weather.city} vào ${weather.dateDescription}: ${weather.description}, nhiệt độ ${weather.maxTemp}°C. Xác suất mưa chỉ ${weather.rainProbability}% → Trời NẮNG ĐẸP. Theo yêu cầu, khi trời nắng sẽ tìm: ${parsedInfo.sunnyAction}`;\n  searchQuery = `${parsedInfo.sunnyAction} ${weather.city} tốt nhất`;\n  category = parsedInfo.sunnyAction;\n} else {\n  reasoning = `Thời tiết tại ${weather.city} vào ${weather.dateDescription}: ${weather.description}, xác suất mưa ${weather.rainProbability}% → Có khả năng MƯA. Theo yêu cầu, khi trời mưa sẽ tìm: ${parsedInfo.rainyAction}`;\n  searchQuery = `${parsedInfo.rainyAction} ${weather.city} tốt nhất`;\n  category = parsedInfo.rainyAction;\n}\n\nreturn [{\n  json: {\n    reasoning,\n    searchQuery,\n    category,\n    sessionId: weather.sessionId,\n    isSunny: weather.isSunny,\n    weatherSummary: weather.summary,\n    city: weather.city,\n    dateDescription: weather.dateDescription\n  }\n}];"
+      },
+      "id": "reasoning-step",
+      "name": "Reasoning Step",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $json.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 5,\n  \"type\": \"thought\",\n  \"icon\": \"🧠\",\n  \"title\": \"Suy luận điều kiện\",\n  \"content\": \"{{ $json.reasoning }}\",\n  \"tool\": null,\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-5",
+      "name": "Push Log 5 - Reasoning",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $('Reasoning Step').first().json.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 6,\n  \"type\": \"action\",\n  \"icon\": \"⚡\",\n  \"title\": \"Tìm kiếm địa điểm\",\n  \"content\": \"Đang tìm kiếm: {{ $('Reasoning Step').first().json.searchQuery }}\",\n  \"tool\": \"DuckDuckGo Search\",\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-6",
+      "name": "Push Log 6 - Search Start",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2420, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.duckduckgo.com/?q={{ encodeURIComponent($('Reasoning Step').first().json.searchQuery) }}&format=json&no_redirect=1&no_html=1",
+        "options": {}
+      },
+      "id": "duckduckgo-search",
+      "name": "DuckDuckGo Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process DuckDuckGo results\nconst ddg = $input.first().json;\nconst reasoningData = $('Reasoning Step').first().json;\n\nlet searchResults = '';\n\n// Extract useful info from DuckDuckGo response\nif (ddg.Abstract) {\n  searchResults += `Tóm tắt: ${ddg.Abstract}\\n\\n`;\n}\n\nif (ddg.RelatedTopics && ddg.RelatedTopics.length > 0) {\n  searchResults += 'Kết quả liên quan:\\n';\n  const topics = ddg.RelatedTopics.filter(t => t.Text).slice(0, 5);\n  topics.forEach((topic, i) => {\n    searchResults += `${i + 1}. ${topic.Text}\\n`;\n  });\n}\n\nif (!searchResults) {\n  // Fallback: tạo context mặc định để LLM vẫn có thể trả lời\n  searchResults = `Tìm kiếm \"${reasoningData.searchQuery}\" - API trả về kết quả hạn chế. LLM sẽ sử dụng kiến thức có sẵn để gợi ý.`;\n}\n\nreturn [{\n  json: {\n    searchResults,\n    searchQuery: reasoningData.searchQuery,\n    sessionId: reasoningData.sessionId,\n    reasoning: reasoningData.reasoning,\n    category: reasoningData.category,\n    city: reasoningData.city,\n    dateDescription: reasoningData.dateDescription,\n    isSunny: reasoningData.isSunny,\n    weatherSummary: reasoningData.weatherSummary\n  }\n}];"
+      },
+      "id": "process-search",
+      "name": "Process Search Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $json.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 7,\n  \"type\": \"observation\",\n  \"icon\": \"👁️\",\n  \"title\": \"Kết quả tìm kiếm\",\n  \"content\": \"{{ $json.searchResults.replace(/\\n/g, '\\\\n').replace(/\"/g, '\\\\\"') }}\",\n  \"tool\": \"DuckDuckGo Search\",\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-7",
+      "name": "Push Log 7 - Search Results",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3080, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $('Process Search Results').first().json.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 8,\n  \"type\": \"thought\",\n  \"icon\": \"🧠\",\n  \"title\": \"Tổng hợp kế hoạch\",\n  \"content\": \"Đang tổng hợp tất cả thông tin và viết kế hoạch sự kiện chi tiết...\",\n  \"tool\": null,\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-8",
+      "name": "Push Log 8 - Generating Plan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3300, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Final Answer - Call Anthropic to generate the plan\nconst data = $('Process Search Results').first().json;\nconst originalMessage = $('LLM Parse Request').first().json.originalMessage;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.anthropic.com/v1/messages',\n  headers: {\n    'Content-Type': 'application/json',\n    'x-api-key': '{{ $credentials.anthropicApi.apiKey }}',\n    'anthropic-version': '2023-06-01'\n  },\n  body: {\n    model: 'claude-sonnet-4-20250514',\n    max_tokens: 2048,\n    messages: [\n      {\n        role: 'user',\n        content: `Bạn là AI Agent lên kế hoạch sự kiện. Hãy tổng hợp tất cả thông tin và viết kế hoạch chi tiết bằng Markdown.\n\n**Yêu cầu gốc:** ${originalMessage}\n\n**Thời tiết:** ${data.weatherSummary}\n\n**Suy luận:** ${data.reasoning}\n\n**Kết quả tìm kiếm:** ${data.searchResults}\n\n**Loại hoạt động:** ${data.category}\n**Thành phố:** ${data.city}\n**Ngày:** ${data.dateDescription}\n\nHãy viết kế hoạch sự kiện chi tiết bao gồm:\n1. 📋 **Tóm tắt thời tiết** - Mô tả ngắn gọn tình hình thời tiết\n2. 🧠 **Giải thích suy luận** - Tại sao chọn hoạt động này dựa trên thời tiết\n3. 📍 **Gợi ý 3 địa điểm cụ thể** - Mỗi địa điểm gồm: tên, mô tả, điểm nổi bật, lý do phù hợp\n4. 🗓️ **Lịch trình gợi ý** - Lịch trình chi tiết cho cả ngày (giờ cụ thể)\n5. 💡 **Lưu ý và mẹo** - Tips hữu ích cho nhóm\n\nViết bằng tiếng Việt, dùng emoji phù hợp, format markdown đẹp.`\n      }\n    ]\n  },\n  json: true\n});\n\nconst finalAnswer = response.content[0].text;\n\nreturn [{\n  json: {\n    finalAnswer,\n    sessionId: data.sessionId\n  }\n}];"
+      },
+      "id": "llm-final-answer",
+      "name": "LLM Final Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://react-agent-weather-default-rtdb.asia-southeast1.firebasedatabase.app/sessions/{{ $json.sessionId }}/steps.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"stepNumber\": 9,\n  \"type\": \"final\",\n  \"icon\": \"✅\",\n  \"title\": \"Hoàn tất!\",\n  \"content\": \"Kế hoạch sự kiện đã được tạo thành công!\",\n  \"tool\": null,\n  \"timestamp\": {{ Date.now() }}\n}",
+        "options": {}
+      },
+      "id": "push-log-9",
+      "name": "Push Log 9 - Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3740, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, finalAnswer: $('LLM Final Answer').first().json.finalAnswer }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [3960, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Push Log 1 - Analyzing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 1 - Analyzing": {
+      "main": [
+        [
+          {
+            "node": "LLM Parse Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Parse Request": {
+      "main": [
+        [
+          {
+            "node": "Push Log 2 - Parsed Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 2 - Parsed Info": {
+      "main": [
+        [
+          {
+            "node": "Push Log 3 - Weather Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 3 - Weather Call": {
+      "main": [
+        [
+          {
+            "node": "Weather API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weather API": {
+      "main": [
+        [
+          {
+            "node": "Process Weather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Weather": {
+      "main": [
+        [
+          {
+            "node": "Push Log 4 - Weather Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 4 - Weather Result": {
+      "main": [
+        [
+          {
+            "node": "Reasoning Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reasoning Step": {
+      "main": [
+        [
+          {
+            "node": "Push Log 5 - Reasoning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 5 - Reasoning": {
+      "main": [
+        [
+          {
+            "node": "Push Log 6 - Search Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 6 - Search Start": {
+      "main": [
+        [
+          {
+            "node": "DuckDuckGo Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DuckDuckGo Search": {
+      "main": [
+        [
+          {
+            "node": "Process Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Search Results": {
+      "main": [
+        [
+          {
+            "node": "Push Log 7 - Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 7 - Search Results": {
+      "main": [
+        [
+          {
+            "node": "Push Log 8 - Generating Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 8 - Generating Plan": {
+      "main": [
+        [
+          {
+            "node": "LLM Final Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Final Answer": {
+      "main": [
+        [
+          {
+            "node": "Push Log 9 - Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Log 9 - Complete": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "react-agent-weather-planner"
+  },
+  "tags": [
+    {
+      "name": "AI Agent",
+      "id": "ai-agent-tag"
+    },
+    {
+      "name": "ReAct",
+      "id": "react-tag"
+    }
+  ]
+}

@@ -1,0 +1,205 @@
+.thought-step {
+  display: flex;
+  gap: var(--spacing-md);
+  animation: slideUp 0.4s ease-out both;
+}
+
+/* Timeline */
+.step-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 36px;
+}
+
+.timeline-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.dot-icon {
+  font-size: 1rem;
+  z-index: 1;
+}
+
+.timeline-dot.pulse::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  animation: dotPulse 2s infinite;
+}
+
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  min-height: 12px;
+  opacity: 0.3;
+  margin: 4px 0;
+}
+
+/* Step Types */
+.step-thought .timeline-dot {
+  background: var(--color-thought-bg);
+  border: 2px solid var(--color-thought-border);
+}
+.step-thought .timeline-dot.pulse::after { color: var(--color-thought); }
+.step-thought .timeline-line { background: var(--color-thought); }
+.step-thought .step-label { color: var(--color-thought); }
+
+.step-action .timeline-dot {
+  background: var(--color-action-bg);
+  border: 2px solid var(--color-action-border);
+}
+.step-action .timeline-dot.pulse::after { color: var(--color-action); }
+.step-action .timeline-line { background: var(--color-action); }
+.step-action .step-label { color: var(--color-action); }
+
+.step-observation .timeline-dot {
+  background: var(--color-observation-bg);
+  border: 2px solid var(--color-observation-border);
+}
+.step-observation .timeline-dot.pulse::after { color: var(--color-observation); }
+.step-observation .timeline-line { background: var(--color-observation); }
+.step-observation .step-label { color: var(--color-observation); }
+
+.step-final .timeline-dot {
+  background: var(--color-final-bg);
+  border: 2px solid var(--color-final-border);
+}
+.step-final .timeline-dot.pulse::after { color: var(--color-final); }
+.step-final .timeline-line { background: var(--color-final); }
+.step-final .step-label { color: var(--color-final); }
+
+/* Content */
+.step-content {
+  flex: 1;
+  padding-bottom: var(--spacing-md);
+  min-width: 0;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.step-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tool-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.step-number {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.step-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.step-body {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.step-text {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Weather inline card */
+.weather-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-top: 6px;
+}
+
+.weather-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.weather-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.weather-desc {
+  font-size: 0.84rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.weather-temp {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.weather-rain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 12px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.rain-label {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.rain-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-action);
+  font-family: var(--font-mono);
+}
+
+/* Latest step glow */
+.thought-step.latest .step-content {
+  position: relative;
+}

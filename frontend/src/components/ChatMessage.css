@@ -1,0 +1,125 @@
+.chat-message {
+  display: flex;
+  gap: var(--spacing-sm);
+  animation: fadeSlideIn 0.3s ease-out;
+}
+
+.message-user {
+  justify-content: flex-end;
+}
+
+.message-ai {
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.message-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.avatar-user {
+  background: var(--accent-gradient);
+  border: none;
+}
+
+.message-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-width: 85%;
+  min-width: 0;
+}
+
+/* Bubbles */
+.message-bubble {
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  line-height: 1.6;
+}
+
+.bubble-user {
+  background: var(--user-bg);
+  color: white;
+  border-bottom-right-radius: var(--spacing-xs);
+}
+
+.bubble-ai {
+  background: var(--ai-bg);
+  border: 1px solid var(--border-subtle);
+  border-bottom-left-radius: var(--spacing-xs);
+}
+
+.message-text {
+  font-size: 0.92rem;
+}
+
+/* Markdown styling */
+.message-markdown {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.message-markdown h1,
+.message-markdown h2,
+.message-markdown h3 {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.message-markdown h1 { font-size: 1.15rem; }
+.message-markdown h2 { font-size: 1.05rem; }
+.message-markdown h3 { font-size: 0.95rem; }
+
+.message-markdown p {
+  margin-bottom: var(--spacing-sm);
+}
+
+.message-markdown ul, .message-markdown ol {
+  margin-left: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+}
+
+.message-markdown li {
+  margin-bottom: 4px;
+}
+
+.message-markdown strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.message-markdown em {
+  color: var(--text-secondary);
+}
+
+.message-markdown code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.message-markdown hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--spacing-md) 0;
+}
+
+@media (max-width: 640px) {
+  .message-content-wrapper {
+    max-width: 92%;
+  }
+}

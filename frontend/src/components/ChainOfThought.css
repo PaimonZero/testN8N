@@ -1,0 +1,80 @@
+.chain-of-thought {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  animation: fadeSlideIn 0.3s ease-out;
+}
+
+.cot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cot-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.cot-icon {
+  font-size: 0.9rem;
+}
+
+.cot-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cot-count {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* Processing dots animation */
+.cot-processing {
+  display: flex;
+  gap: 3px;
+  margin-left: 4px;
+}
+
+.processing-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  animation: pulse 1.2s infinite;
+}
+
+.processing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.processing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Steps container */
+.cot-steps {
+  padding: var(--spacing-md) var(--spacing-md) 0;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* Waiting shimmer */
+.cot-waiting {
+  padding: 0 0 var(--spacing-md) 52px;
+}
+
+.waiting-shimmer {
+  height: 24px;
+  border-radius: var(--radius-sm);
+}
